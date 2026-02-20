@@ -42,7 +42,7 @@ class NSEConstituentFetcher:
         ),
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Encoding": "gzip, deflate",
         "Referer": "https://www.nseindia.com/",
     }
 
@@ -103,7 +103,7 @@ class NSEConstituentFetcher:
                 time.sleep(self.config.retry_delay * (attempt + 1))
 
         # Step 2: Fetch index data from API
-        time.sleep(1)  # Respectful delay
+        time.sleep(2)  # Respectful delay for cookie propagation
         params = {"index": index_name}
         for attempt in range(self.config.max_retries):
             try:
@@ -115,7 +115,7 @@ class NSEConstituentFetcher:
                 resp.raise_for_status()
                 data = resp.json()
                 break
-            except requests.RequestException:
+            except (requests.RequestException, ValueError):
                 if attempt == self.config.max_retries - 1:
                     raise
                 time.sleep(self.config.retry_delay * (attempt + 1))

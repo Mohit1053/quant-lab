@@ -225,7 +225,7 @@ class MultiTaskLoss(nn.Module):
 
     def _gaussian_nll(self, dist, returns, total_loss, losses):
         mean = dist["mean"]
-        log_var = dist["log_var"]
+        log_var = torch.clamp(dist["log_var"], min=-10.0, max=10.0)
         # Gaussian NLL: 0.5 * (log_var + (y - mu)^2 / exp(log_var))
         nll = 0.5 * (log_var + (returns - mean) ** 2 / (log_var.exp() + 1e-8))
         nll = nll.mean()
@@ -235,8 +235,8 @@ class MultiTaskLoss(nn.Module):
 
     def _student_t_nll(self, dist, returns, total_loss, losses):
         loc = dist["loc"]
-        log_scale = dist["log_scale"]
-        log_df = dist["log_df"]
+        log_scale = torch.clamp(dist["log_scale"], min=-10.0, max=10.0)
+        log_df = torch.clamp(dist["log_df"], min=-5.0, max=5.0)
         scale = log_scale.exp() + 1e-8
         df = log_df.exp() + 2.0  # Ensure df > 2 for finite variance
         # Simplified Student-t NLL

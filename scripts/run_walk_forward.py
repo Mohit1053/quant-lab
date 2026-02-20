@@ -313,10 +313,15 @@ def main(cfg: DictConfig) -> None:
     print(f"  Date range:     {feature_df['date'].min()} to {feature_df['date'].max()}")
     print("=" * 60)
 
+    start_fold = int(wf_cfg.get("start_fold", 0))
+    if start_fold > 0:
+        print(f"  Resuming from fold {start_fold}")
+
     engine = WalkForwardEngine(wf_config, backtest_config)
     result = engine.run(
         feature_df, feature_cols, prices_df, factory,
         regime_labels=regime_labels,
+        start_fold=start_fold,
     )
 
     # Print results
@@ -340,7 +345,18 @@ def main(cfg: DictConfig) -> None:
     # Save results
     output_dir = Path("outputs/walk_forward") / model_type
     output_dir.mkdir(parents=True, exist_ok=True)
-    result.per_fold_metrics.to_csv(output_dir / "per_fold_metrics.csv", index=False)
+
+    # If resuming, merge with existing results
+    csv_path = output_dir / "per_fold_metrics.csv"
+    if start_fold > 0 and csv_path.exists():
+        existing = pd.read_csv(csv_path)
+        existing = existing[existing["fold"] < start_fold]
+        merged = pd.concat([existing, result.per_fold_metrics], ignore_index=True)
+        merged.to_csv(csv_path, index=False)
+        print(f"\nMerged {len(existing)} existing + {len(result.per_fold_metrics)} new folds")
+    else:
+        result.per_fold_metrics.to_csv(csv_path, index=False)
+
     result.aggregate_equity.to_frame("equity").to_parquet(output_dir / "aggregate_equity.parquet")
     print(f"\nResults saved to: {output_dir}")
 

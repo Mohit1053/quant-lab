@@ -100,7 +100,7 @@ class BacktestEngine:
             day_returns = returns_wide.loc[date].values
             nan_count = int(np.isnan(day_returns).sum())
             if nan_count > 0:
-                logger.debug("nan_returns_filled", date=str(date), nan_count=nan_count)
+                logger.warning("nan_returns_filled", date=str(date), nan_count=nan_count)
             day_returns = np.nan_to_num(day_returns, nan=0.0)
 
             portfolio_return = np.dot(current_weights, day_returns)
@@ -115,7 +115,7 @@ class BacktestEngine:
                 signal_date = dates[signal_date_idx]
 
                 if signal_date in signal_wide.index:
-                    # Guard against lookahead: signal date must not be after current date
+                    # Guard: signal generated FOR current date, USING data from signal_date
                     assert_no_lookahead(
                         signal_date=pd.Timestamp(date),
                         data_date=pd.Timestamp(signal_date),

@@ -116,6 +116,7 @@ class WalkForwardSplitter:
             split = TemporalSplit(
                 train_end=str(dates[train_end_idx].date()),
                 val_end=str(dates[val_end_idx].date()),
+                test_end=str(dates[test_end_idx].date()),
             )
             splits.append(split)
 
@@ -163,6 +164,7 @@ class WalkForwardEngine:
         prices_df: pd.DataFrame,
         model_factory: ModelFactory,
         regime_labels: pd.Series | None = None,
+        start_fold: int = 0,
     ) -> WalkForwardResult:
         """Execute walk-forward analysis.
 
@@ -172,6 +174,7 @@ class WalkForwardEngine:
             prices_df: Full prices DataFrame[date, ticker, adj_close].
             model_factory: Callable that trains model and returns signals.
             regime_labels: Optional regime labels for conditional sizing.
+            start_fold: Skip folds before this index (for resuming).
 
         Returns:
             WalkForwardResult with per-fold and aggregate metrics.
@@ -194,6 +197,8 @@ class WalkForwardEngine:
         engine = BacktestEngine(config=self.backtest_config)
 
         for fold_idx, split in enumerate(splits):
+            if fold_idx < start_fold:
+                continue
             logger.info("walk_forward_fold_start", fold=fold_idx)
 
             try:

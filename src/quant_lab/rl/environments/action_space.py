@@ -54,12 +54,12 @@ class ActionProcessor:
         # Apply softmax-like normalization
         weights = self._normalize(weights)
 
-        # Clip to per-asset constraints
-        weights = np.clip(weights, self.min_weight, self.max_weight)
-
-        # Re-normalize if sum exceeds max leverage
-        total = np.sum(weights)
-        if total > self.max_leverage:
+        # Iterative clipping: enforce both per-asset max and total leverage
+        for _ in range(5):
+            weights = np.clip(weights, self.min_weight, self.max_weight)
+            total = np.sum(weights)
+            if total <= self.max_leverage + 1e-9:
+                break
             weights = weights * (self.max_leverage / total)
 
         return weights

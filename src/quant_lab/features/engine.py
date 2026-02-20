@@ -86,7 +86,9 @@ class FeatureEngine:
                 std = df.groupby("ticker")[col].transform(
                     lambda s: s.rolling(window=lookback, min_periods=lookback // 2).std()
                 )
-                df[col] = (df[col] - mean) / std.clip(lower=1e-8)
+                zscore = (df[col] - mean) / std.clip(lower=1e-8)
+                # Zero out z-scores where std is near-zero (constant features)
+                df[col] = zscore.where(std > 1e-6, 0.0)
         elif method == "rank":
             for col in feature_cols:
                 df[col] = df.groupby("date")[col].rank(pct=True)

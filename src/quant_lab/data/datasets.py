@@ -20,7 +20,7 @@ class TemporalSplit:
 
     train_end: str
     val_end: str
-    # test = everything after val_end
+    test_end: str | None = None  # If None, test = everything after val_end
 
 
 class TimeSeriesDataset(Dataset):
@@ -106,9 +106,14 @@ def create_temporal_splits(
 
     df["date"] = pd.to_datetime(df["date"])
 
+    test_end = pd.Timestamp(split.test_end) if split.test_end else None
+
     train_df = df[df["date"] <= train_end]
     val_df = df[(df["date"] > train_end) & (df["date"] <= val_end)]
-    test_df = df[df["date"] > val_end]
+    if test_end is not None:
+        test_df = df[(df["date"] > val_end) & (df["date"] <= test_end)]
+    else:
+        test_df = df[df["date"] > val_end]
 
     tickers = df["ticker"].unique()
 
@@ -149,11 +154,16 @@ def create_flat_datasets(
     df["date"] = pd.to_datetime(df["date"])
     df = df.dropna(subset=feature_cols + [target_col])
 
+    test_end = pd.Timestamp(split.test_end) if split.test_end else None
+    test_mask = df["date"] > val_end
+    if test_end is not None:
+        test_mask = test_mask & (df["date"] <= test_end)
+
     result = {}
     for name, mask in [
         ("train", df["date"] <= train_end),
         ("val", (df["date"] > train_end) & (df["date"] <= val_end)),
-        ("test", df["date"] > val_end),
+        ("test", test_mask),
     ]:
         split_df = df[mask]
         X = split_df[feature_cols].values.astype(np.float32)
