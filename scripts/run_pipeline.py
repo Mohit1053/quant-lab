@@ -55,11 +55,23 @@ def main(cfg: DictConfig) -> None:
     else:
         universe = get_universe(universe_name)
 
-        # Auto-load NIFTY 500 tickers from NSE if universe is empty
-        if not universe.tickers and universe_name in ("nifty500", "indian_market"):
+        # Auto-load tickers from NSE if universe is empty
+        if not universe.tickers and universe_name == "nifty500":
             from quant_lab.data.universe import load_nifty500_tickers
 
             tickers = load_nifty500_tickers(
+                cache_dir=str(data_dir / "universe_cache"),
+            )
+            universe = get_universe(universe_name, tickers_override=tickers)
+            logger.info(
+                "dynamic_tickers_loaded",
+                universe=universe_name,
+                count=len(tickers),
+            )
+        elif not universe.tickers and universe_name == "indian_market":
+            from quant_lab.data.universe import load_all_nse_tickers
+
+            tickers = load_all_nse_tickers(
                 cache_dir=str(data_dir / "universe_cache"),
             )
             universe = get_universe(universe_name, tickers_override=tickers)
@@ -84,6 +96,13 @@ def main(cfg: DictConfig) -> None:
             ffill_limit=cfg.data.cleaning.ffill_limit,
             outlier_sigma=cfg.data.cleaning.outlier_sigma,
             min_history_days=cfg.data.cleaning.min_history_days,
+            min_avg_daily_volume=cfg.data.cleaning.get(
+                "min_avg_daily_volume", 0
+            ),
+            min_median_price=cfg.data.cleaning.get("min_median_price", 0.0),
+            min_trading_days_pct=cfg.data.cleaning.get(
+                "min_trading_days_pct", 0.0
+            ),
         )
         pipeline = CleaningPipeline(cleaning_cfg)
         df = pipeline.run(raw_df)

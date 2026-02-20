@@ -16,6 +16,7 @@ from quant_lab.data.cleaning.transformers import (
     cap_outliers,
     forward_fill_missing,
     remove_high_missing_tickers,
+    remove_illiquid_tickers,
     remove_low_history_tickers,
 )
 
@@ -30,6 +31,10 @@ class CleaningConfig:
     ffill_limit: int = 5
     outlier_sigma: float = 10.0
     min_history_days: int = 252
+    # Liquidity filters (active when any value > 0)
+    min_avg_daily_volume: float = 0
+    min_median_price: float = 0.0
+    min_trading_days_pct: float = 0.0
 
 
 class CleaningPipeline:
@@ -66,7 +71,20 @@ class CleaningPipeline:
         # Step 5: Remove tickers with insufficient history
         df = remove_low_history_tickers(df, self.config.min_history_days)
 
-        # Step 6: Drop any remaining NaN rows in close price
+        # Step 6: Liquidity filter (only if thresholds are set)
+        if (
+            self.config.min_avg_daily_volume > 0
+            or self.config.min_median_price > 0
+            or self.config.min_trading_days_pct > 0
+        ):
+            df = remove_illiquid_tickers(
+                df,
+                min_avg_daily_volume=self.config.min_avg_daily_volume,
+                min_median_price=self.config.min_median_price,
+                min_trading_days_pct=self.config.min_trading_days_pct,
+            )
+
+        # Step 7: Drop any remaining NaN rows in close price
         df = df.dropna(subset=["close"])
 
         # Sort for consistent output

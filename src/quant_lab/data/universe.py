@@ -118,6 +118,32 @@ def load_nifty500_tickers(
     return fetcher.fetch_constituents("NIFTY 500")
 
 
+def load_all_nse_tickers(
+    cache_dir: str = "data/universe_cache",
+    force_refresh: bool = False,
+    series_filter: list[str] | None = None,
+) -> list[str]:
+    """Load ALL NSE-listed equities from EQUITY_L.csv.
+
+    By default filters to EQ series (~2100 stocks = regular equity
+    with intraday trading). Pass series_filter=[] for all series.
+
+    Can be used as tickers_override for get_universe("indian_market").
+    """
+    from quant_lab.data.sources.nse_source import (
+        NSEConstituentFetcher,
+        NSEFetchConfig,
+    )
+
+    config = NSEFetchConfig(
+        cache_dir=cache_dir,
+        cache_ttl_days=0 if force_refresh else 7,
+        series_filter=series_filter if series_filter is not None else ["EQ"],
+    )
+    fetcher = NSEConstituentFetcher(config)
+    return fetcher.fetch_all_nse_equities(series_filter=series_filter)
+
+
 def get_universe(name: str, tickers_override: list[str] | None = None) -> Universe:
     """Get a predefined universe by name, optionally overriding tickers."""
     if name not in UNIVERSES:

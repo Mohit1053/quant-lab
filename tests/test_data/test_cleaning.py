@@ -14,6 +14,7 @@ from quant_lab.data.cleaning.validators import (
 from quant_lab.data.cleaning.transformers import (
     forward_fill_missing,
     remove_high_missing_tickers,
+    remove_illiquid_tickers,
     remove_low_history_tickers,
 )
 
@@ -62,6 +63,60 @@ class TestTransformers:
         nan_indices = df[mask].index[:400]
         df.loc[nan_indices, "close"] = np.nan
         result = remove_high_missing_tickers(df, max_missing_pct=0.20)
+        assert "TICKER_A" not in result["ticker"].values
+
+
+class TestLiquidityFilter:
+    def test_removes_low_volume_tickers(self, synthetic_ohlcv):
+        df = synthetic_ohlcv.copy()
+        # Set one ticker to have very low volume
+        mask = df["ticker"] == "TICKER_A"
+        df.loc[mask, "volume"] = 100
+        result = remove_illiquid_tickers(df, min_avg_daily_volume=10_000)
+        assert "TICKER_A" not in result["ticker"].values
+        # Other tickers should survive
+        assert result["ticker"].nunique() >= 3
+
+    def test_removes_penny_stocks(self, synthetic_ohlcv):
+        df = synthetic_ohlcv.copy()
+        # Set one ticker to penny stock prices
+        mask = df["ticker"] == "TICKER_B"
+        df.loc[mask, "close"] = 2.0
+        result = remove_illiquid_tickers(df, min_median_price=5.0, min_avg_daily_volume=0)
+        assert "TICKER_B" not in result["ticker"].values
+
+    def test_removes_sparse_tickers(self, synthetic_ohlcv):
+        df = synthetic_ohlcv.copy()
+        # Remove most data for one ticker (keep only 10%)
+        mask = df["ticker"] == "TICKER_C"
+        indices = df[mask].index
+        drop_count = int(len(indices) * 0.92)
+        df = df.drop(indices[:drop_count])
+        result = remove_illiquid_tickers(
+            df, min_trading_days_pct=0.50, min_avg_daily_volume=0,
+        )
+        assert "TICKER_C" not in result["ticker"].values
+
+    def test_no_filter_keeps_all(self, synthetic_ohlcv):
+        result = remove_illiquid_tickers(
+            synthetic_ohlcv,
+            min_avg_daily_volume=0,
+            min_median_price=0.0,
+            min_trading_days_pct=0.0,
+        )
+        assert result["ticker"].nunique() == synthetic_ohlcv["ticker"].nunique()
+
+    def test_pipeline_with_liquidity_filter(self, synthetic_ohlcv):
+        df = synthetic_ohlcv.copy()
+        # Set one ticker to penny stock prices
+        mask = df["ticker"] == "TICKER_A"
+        df.loc[mask, "close"] = 1.0
+        config = CleaningConfig(
+            min_history_days=100,
+            min_median_price=5.0,
+        )
+        pipeline = CleaningPipeline(config)
+        result = pipeline.run(df)
         assert "TICKER_A" not in result["ticker"].values
 
 

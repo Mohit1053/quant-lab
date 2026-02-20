@@ -101,3 +101,58 @@ def remove_high_missing_tickers(
         )
 
     return df[df["ticker"].isin(valid_tickers)].copy()
+
+
+def remove_illiquid_tickers(
+    df: pd.DataFrame,
+    min_avg_daily_volume: float = 10_000,
+    min_median_price: float = 5.0,
+    min_trading_days_pct: float = 0.50,
+) -> pd.DataFrame:
+    """Remove illiquid tickers based on volume, price, and trading day filters.
+
+    Particularly important when expanding to full market (2000+ stocks)
+    where many micro-caps have negligible liquidity.
+
+    Args:
+        df: DataFrame with columns [ticker, date, close, volume].
+        min_avg_daily_volume: Minimum average daily volume across history.
+        min_median_price: Minimum median close price (filters penny stocks).
+        min_trading_days_pct: Minimum fraction of total trading days the
+            ticker must have data for (vs the most active ticker).
+    """
+    stats = df.groupby("ticker").agg(
+        avg_volume=("volume", "mean"),
+        median_price=("close", "median"),
+        n_days=("date", "count"),
+    )
+
+    max_days = stats["n_days"].max()
+    stats["trading_pct"] = stats["n_days"] / max_days
+
+    # Apply all three filters
+    valid = stats[
+        (stats["avg_volume"] >= min_avg_daily_volume)
+        & (stats["median_price"] >= min_median_price)
+        & (stats["trading_pct"] >= min_trading_days_pct)
+    ].index.tolist()
+
+    removed_volume = stats[stats["avg_volume"] < min_avg_daily_volume].index.tolist()
+    removed_price = stats[stats["median_price"] < min_median_price].index.tolist()
+    removed_trading = stats[stats["trading_pct"] < min_trading_days_pct].index.tolist()
+
+    n_removed = len(stats) - len(valid)
+    if n_removed > 0:
+        logger.info(
+            "tickers_removed_illiquid",
+            total_removed=n_removed,
+            remaining=len(valid),
+            low_volume=len(removed_volume),
+            penny_stock=len(removed_price),
+            low_trading_days=len(removed_trading),
+            min_avg_volume=min_avg_daily_volume,
+            min_median_price=min_median_price,
+            min_trading_pct=min_trading_days_pct,
+        )
+
+    return df[df["ticker"].isin(valid)].copy()

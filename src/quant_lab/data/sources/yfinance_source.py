@@ -16,9 +16,15 @@ logger = structlog.get_logger(__name__)
 class YFinanceSource(BaseDataSource):
     """Fetches OHLCV data from Yahoo Finance."""
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 2.0):
+    def __init__(
+        self,
+        max_retries: int = 3,
+        retry_delay: float = 2.0,
+        batch_size: int = 100,
+    ):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.batch_size = batch_size
 
     def fetch(
         self,
@@ -28,16 +34,19 @@ class YFinanceSource(BaseDataSource):
     ) -> pd.DataFrame:
         """Fetch OHLCV data for given tickers from Yahoo Finance.
 
-        Downloads all tickers in a single batch call for efficiency,
-        then reshapes into the standard long-format DataFrame.
+        For large ticker lists (>batch_size), downloads in batches to
+        avoid rate limits and memory issues, then concatenates results.
         """
         logger.info("fetching_data", num_tickers=len(tickers), start=start, end=end)
 
-        raw = self._download_with_retry(tickers, start, end)
-        if raw.empty:
-            raise RuntimeError("No data returned from Yahoo Finance")
+        if len(tickers) <= self.batch_size:
+            raw = self._download_with_retry(tickers, start, end)
+            if raw.empty:
+                raise RuntimeError("No data returned from Yahoo Finance")
+            df = self._reshape_to_long(raw, tickers)
+        else:
+            df = self._fetch_batched(tickers, start, end)
 
-        df = self._reshape_to_long(raw, tickers)
         df = self.validate_schema(df)
 
         logger.info(
@@ -47,6 +56,52 @@ class YFinanceSource(BaseDataSource):
             date_range=f"{df['date'].min().date()} to {df['date'].max().date()}",
         )
         return df
+
+    def _fetch_batched(
+        self, tickers: list[str], start: str, end: str
+    ) -> pd.DataFrame:
+        """Download tickers in batches and concatenate results."""
+        all_records = []
+        n_batches = (len(tickers) + self.batch_size - 1) // self.batch_size
+
+        for i in range(0, len(tickers), self.batch_size):
+            batch = tickers[i : i + self.batch_size]
+            batch_num = i // self.batch_size + 1
+            logger.info(
+                "batch_download",
+                batch=batch_num,
+                total_batches=n_batches,
+                tickers_in_batch=len(batch),
+            )
+
+            try:
+                raw = self._download_with_retry(batch, start, end)
+                if not raw.empty:
+                    batch_df = self._reshape_to_long(raw, batch)
+                    all_records.append(batch_df)
+                    logger.info(
+                        "batch_complete",
+                        batch=batch_num,
+                        rows=len(batch_df),
+                        tickers=batch_df["ticker"].nunique(),
+                    )
+                else:
+                    logger.warning("batch_empty", batch=batch_num)
+            except Exception as e:
+                logger.warning(
+                    "batch_failed",
+                    batch=batch_num,
+                    error=str(e),
+                )
+
+            # Respectful delay between batches
+            if batch_num < n_batches:
+                time.sleep(2)
+
+        if not all_records:
+            raise RuntimeError("No data returned from any batch")
+
+        return pd.concat(all_records, ignore_index=True)
 
     def _download_with_retry(
         self, tickers: list[str], start: str, end: str
