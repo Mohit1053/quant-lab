@@ -79,7 +79,7 @@ def main():
     print("1. DATA OVERVIEW")
     print("-" * 80)
 
-    for universe in ["nifty50", "nifty500"]:
+    for universe in ["nifty50", "nifty500", "indian_market"]:
         feat_path = Path(f"data/features/{universe}_features.parquet")
         if feat_path.exists():
             df = pd.read_parquet(feat_path)
@@ -172,6 +172,7 @@ def main():
         ("NIFTY 50 Ridge", Path("outputs/walk_forward/ridge")),
         ("NIFTY 50 Transformer", Path("outputs/walk_forward/transformer")),
         ("NIFTY 500 Ridge", Path("outputs/walk_forward/ridge_nifty500")),
+        ("Full Market Transformer", Path("outputs/walk_forward/transformer_fullmkt")),
     ]
 
     for label, wf_dir in wf_configs:
@@ -261,6 +262,7 @@ def main():
         ("C", "SAC + Regimes + Backtest", "notebooks/colab_C_sac_regime_backtest.ipynb"),
         ("D", "NIFTY 500 DL + Walk-Forward", "notebooks/colab_D_nifty500_dl_walkforward.ipynb"),
         ("E", "Optuna Sweep NIFTY 500", "notebooks/colab_E_optuna_sweep.ipynb"),
+        ("F", "Full Indian Market DL + Walk-Forward", "notebooks/colab_F_full_market_dl.ipynb"),
     ]
 
     for letter, desc, path in notebooks:
@@ -272,7 +274,7 @@ def main():
     print("\n" + "-" * 80)
     print("7. PROJECT HEALTH")
     print("-" * 80)
-    print("  Test suite:    398+ tests")
+    print("  Test suite:    410+ tests")
     print("  Audit fixes:   4 (NLL clamping, action constraints, normalization, logging)")
     print("  No TODOs/FIXMEs found in codebase")
 

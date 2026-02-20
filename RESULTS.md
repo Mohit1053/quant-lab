@@ -2,23 +2,25 @@
 
 ## Overview
 
-End-to-end quantitative research platform for Indian equities (NIFTY 50 / NIFTY 500).
+End-to-end quantitative research platform for Indian equities (NIFTY 50 / NIFTY 500 / Full Indian Market).
 Pipeline: Data Ingestion -> Feature Engineering -> Model Training -> Regime Detection -> Ensemble -> Walk-Forward Validation -> Backtesting -> Reporting.
 
 ---
 
 ## Data Pipeline
 
-| Stage | NIFTY 50 | NIFTY 500 |
-|-------|----------|-----------|
-| **Tickers** | 49 | 458 |
-| **Date Range** | Jan 2010 - Dec 2024 | Jan 2010 - Dec 2024 |
-| **Trading Days** | 3,700 | 3,703 |
-| **Features** | 15 per stock per day | 15 per stock per day |
-| **Total Rows** | 177,187 | 1,333,342 |
-| **Train** | Jan 2010 - Dec 2021 | Jan 2010 - Dec 2021 |
-| **Validation** | Jan 2022 - Jun 2023 | Jan 2022 - Jun 2023 |
-| **Test (OOS)** | Jul 2023 - Dec 2024 | Jul 2023 - Dec 2024 |
+| Stage | NIFTY 50 | NIFTY 500 | Full Indian Market |
+|-------|----------|-----------|-------------------|
+| **Tickers** | 49 | 458 | 1,093 |
+| **Date Range** | Jan 2010 - Dec 2024 | Jan 2010 - Dec 2024 | Jan 2010 - Dec 2024 |
+| **Trading Days** | 3,700 | 3,703 | 3,704 |
+| **Features** | 15 per stock per day | 15 per stock per day | 15 per stock per day |
+| **Total Rows** | 177,187 | 1,333,342 | 3,731,671 |
+| **Raw Tickers (pre-filter)** | 49 | ~500 | 1,914 (of 2,105 EQ-series) |
+| **Liquidity Filters** | None | None | 10K avg vol, INR 5 min price, 50% trading days |
+| **Train** | Jan 2010 - Dec 2021 | Jan 2010 - Dec 2021 | Jan 2010 - Dec 2021 |
+| **Validation** | Jan 2022 - Jun 2023 | Jan 2022 - Jun 2023 | Jan 2022 - Jun 2023 |
+| **Test (OOS)** | Jul 2023 - Dec 2024 | Jul 2023 - Dec 2024 | Jul 2023 - Dec 2024 |
 
 ### Feature Families (15 total)
 - **Log Returns**: 1d, 5d, 21d, 63d windows
@@ -223,11 +225,11 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 
 | Component | Details |
 |-----------|---------|
-| **Tests** | **398 passing** (pytest) |
+| **Tests** | **410 passing** (pytest) |
 | Audit Fixes | 4 (NLL clamping, action constraints, normalization, logging) |
 | Config | Hydra-based, 13+ YAML files |
 | Tracking | MLflow experiment tracking |
-| Cloud | Colab Pro+ (H100/A100), 5 notebooks (A-E) |
+| Cloud | Colab Pro+ (H100/A100), 6 notebooks (A-F) |
 | Local | RTX 4080 12GB, 32GB RAM, 20 CPU cores |
 | Data | All intermediates persisted as Parquet |
 
@@ -257,6 +259,7 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 | C | SAC + Regimes + Backtest | Complete |
 | D | NIFTY 500 DL + Walk-Forward | Ready (not yet run) |
 | E | Optuna Hyperparameter Sweep | Ready (not yet run) |
+| F | Full Indian Market DL + Walk-Forward | Ready (data computed locally, 524MB) |
 
 ---
 
@@ -272,4 +275,6 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 
 5. **NIFTY 500 expansion**: Ridge strategy yields identical results to NIFTY 50 (top-N picks same large-cap stocks). DL models needed to exploit the broader universe (Colab D/E ready).
 
-6. **Audit fixes**: 4 real bugs found and fixed (NLL log_var unbounded, action processor max_weight violation, zero-std normalization, NaN logging level). All 398 tests passing.
+6. **Full Indian market expansion**: All 2,105 NSE EQ-series equities downloaded via EQUITY_L.csv. After liquidity filters (10K avg vol, INR 5 min price, 50% trading days, 504-day min history), 1,093 stocks remain with 3.7M rows and 524MB of features. Colab notebook F ready for DL training.
+
+7. **Audit fixes**: 4 real bugs found and fixed (NLL log_var unbounded, action processor max_weight violation, zero-std normalization, NaN logging level). All 410 tests passing.
