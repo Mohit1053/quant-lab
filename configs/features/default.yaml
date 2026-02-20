@@ -1,0 +1,14 @@
+enabled_features:
+  - log_returns
+  - realized_volatility
+  - momentum
+  - max_drawdown
+
+windows:
+  short: [1, 5]
+  medium: [21]
+  long: [63]
+
+normalization:
+  method: rolling_zscore
+  lookback: 252

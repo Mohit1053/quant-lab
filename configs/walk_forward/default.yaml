@@ -1,0 +1,7 @@
+window_type: expanding   # expanding or rolling
+train_days: 756          # ~3 years
+val_days: 126            # ~6 months
+test_days: 126           # ~6 months per fold
+step_days: 126           # advance each fold
+min_train_days: 504      # ~2 years minimum
+model_type: ridge        # ridge, transformer, tft, ensemble

@@ -1,0 +1,32 @@
+method: simple_average  # simple_average, weighted_average, regime_conditional
+
+model_names:
+  - ridge
+  - transformer
+  - tft
+
+weights:
+  ridge: 0.2
+  transformer: 0.4
+  tft: 0.4
+
+optimize_weights: false
+optimize_metric: sharpe
+
+regime_weights:
+  0:  # Bear — Transformer excels
+    ridge: 0.1
+    transformer: 0.5
+    tft: 0.4
+  1:  # Bull — balanced
+    ridge: 0.3
+    transformer: 0.4
+    tft: 0.3
+  2:  # Transition — Ridge more stable
+    ridge: 0.5
+    transformer: 0.25
+    tft: 0.25
+  3:  # Rare — defensive, Ridge-heavy
+    ridge: 0.5
+    transformer: 0.25
+    tft: 0.25

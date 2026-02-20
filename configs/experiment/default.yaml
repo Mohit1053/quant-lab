@@ -1,0 +1,14 @@
+tracking:
+  backend: mlflow  # mlflow or wandb
+  experiment_name: quant_lab
+  run_name: null  # Auto-generated if null
+
+mlflow:
+  tracking_uri: ./outputs/mlruns
+  log_models: true
+  log_artifacts: true
+
+wandb:
+  project: quant_lab
+  entity: null
+  log_model: false

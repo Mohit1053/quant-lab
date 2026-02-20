@@ -1,0 +1,22 @@
+universe:
+  name: nifty50
+  tickers: null  # null = load from universe definition
+  benchmark: "^NSEI"  # NIFTY 50 index
+
+date_range:
+  start: "2010-01-01"
+  end: "2024-12-31"
+  train_end: "2021-12-31"
+  val_end: "2023-06-30"
+  # test: 2023-07-01 to 2024-12-31
+
+source:
+  type: yfinance
+  frequency: daily
+  adjust: true  # Use adjusted close prices
+
+cleaning:
+  max_missing_pct: 0.20
+  ffill_limit: 5
+  outlier_sigma: 10.0
+  min_history_days: 252  # 1 year minimum

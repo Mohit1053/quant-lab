@@ -1,0 +1,34 @@
+algorithm: ppo
+
+environment:
+  initial_cash: 1000000
+  max_leverage: 1.0
+  min_weight: 0.0
+  max_weight: 0.20
+  cash_weight: true
+  rebalance_frequency: 5
+
+reward:
+  lambda_mdd: 0.5
+  lambda_turnover: 0.01
+  cost_model:
+    commission_bps: 10
+    slippage_bps: 5
+    spread_bps: 5
+
+agent:
+  learning_rate: 3.0e-4
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+
+training:
+  total_timesteps: 1000000
+  eval_freq: 10000
+  n_eval_episodes: 5

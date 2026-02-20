@@ -1,0 +1,40 @@
+sweep:
+  n_trials: 50
+  timeout_seconds: 7200  # 2-hour max
+  epochs_per_trial: 50   # shorter than full training (100)
+  patience: 8            # faster early stopping
+
+  pruner:
+    type: median
+    n_startup_trials: 5  # min trials before pruning kicks in
+    n_warmup_steps: 10   # min epochs before a trial can be pruned
+
+  # Transformer search space
+  transformer:
+    d_model: [64, 128, 256]
+    nhead: [4, 8]
+    num_encoder_layers: [2, 6]       # int range
+    dim_feedforward: [256, 512, 1024]
+    dropout: [0.05, 0.3]             # float range
+    batch_size: [32, 64, 128]
+    learning_rate: [1.0e-5, 1.0e-3]  # log-uniform
+    weight_decay: [1.0e-6, 1.0e-4]   # log-uniform
+    warmup_steps: [200, 500, 1000]
+    direction_weight: [0.1, 0.5]
+    volatility_weight: [0.1, 0.5]
+
+  # TFT search space (Transformer params + LSTM/GRN extras)
+  tft:
+    d_model: [64, 128, 256]
+    nhead: [2, 4, 8]
+    num_encoder_layers: [1, 4]
+    lstm_layers: [1, 2]
+    lstm_hidden: [64, 128, 256]
+    grn_hidden: [32, 64, 128]
+    dropout: [0.05, 0.3]
+    batch_size: [32, 64, 128]
+    learning_rate: [1.0e-5, 1.0e-3]
+    weight_decay: [1.0e-6, 1.0e-4]
+    warmup_steps: [200, 500, 1000]
+    direction_weight: [0.1, 0.5]
+    volatility_weight: [0.1, 0.5]

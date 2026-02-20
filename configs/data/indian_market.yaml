@@ -1,0 +1,21 @@
+universe:
+  name: indian_market
+  tickers: null  # Loaded from universe.py full Indian market definition
+  benchmark: "^NSEI"
+
+date_range:
+  start: "2015-01-01"
+  end: "2024-12-31"
+  train_end: "2022-12-31"
+  val_end: "2023-12-31"
+
+source:
+  type: yfinance
+  frequency: daily
+  adjust: true
+
+cleaning:
+  max_missing_pct: 0.40  # More lenient for full market (small-caps have gaps)
+  ffill_limit: 10
+  outlier_sigma: 8.0
+  min_history_days: 126  # ~6 months minimum for newly listed stocks

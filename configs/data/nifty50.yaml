@@ -1,0 +1,21 @@
+universe:
+  name: nifty50
+  tickers: null  # Loaded from universe.py NIFTY50 definition
+  benchmark: "^NSEI"
+
+date_range:
+  start: "2010-01-01"
+  end: "2024-12-31"
+  train_end: "2021-12-31"
+  val_end: "2023-06-30"
+
+source:
+  type: yfinance
+  frequency: daily
+  adjust: true
+
+cleaning:
+  max_missing_pct: 0.20
+  ffill_limit: 5
+  outlier_sigma: 10.0
+  min_history_days: 252
