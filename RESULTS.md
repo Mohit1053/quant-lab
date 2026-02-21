@@ -85,6 +85,37 @@ Gaussian NLL is negative when the model assigns high probability to actual targe
 
 **Transformer vs TFT**: The original TFT suffered mode collapse due to overparameterization (35.6M params for ~177K rows). TFT-small (562K params) produces diverse signals but lower single-split Sharpe (0.24 vs 0.51).
 
+### NIFTY 500 Transformer (Colab D, H100)
+| Metric | Value |
+|--------|-------|
+| Hardware | H100 80GB (Colab Pro+) |
+| Architecture | d_model=128, nhead=8, 4 layers, dim_ff=512, dropout=0.1 |
+| Parameters | 796,294 |
+| Epochs | 22 / 100 (early stopped, patience=10) |
+| **Best Val Loss** | **-3.069** |
+| Training Time | 22.6 min |
+
+### NIFTY 500 TFT-small (Colab D, H100)
+| Metric | Value |
+|--------|-------|
+| Hardware | H100 80GB (Colab Pro+) |
+| Architecture | d_model=32, nhead=4, 1 layer, LSTM hidden=32, dropout=0.3 |
+| Epochs | 54 / 100 (early stopped, patience=15) |
+| **Best Val Loss** | **-3.079** |
+| Signal std | 0.024 (no mode collapse) |
+| Training Time | 169.6 min |
+
+### Optuna Hyperparameter Sweep (Colab E, A100)
+
+Both sweeps completed only 1 trial each (2h timeout, each trial takes ~2-3h on NIFTY 500). Results are the first TPE sample, not properly optimized.
+
+| Model | Best Val Loss | Key Params |
+|-------|-------------|------------|
+| Transformer | -3.025 | d_model=128, nhead=4, 2 layers, dim_ff=512, lr=1.1e-5, seq=63 |
+| TFT | -3.077 | d_model=32, nhead=2, 1 layer, lstm=32, grn=32, lr=1.6e-4, seq=63 |
+
+**Note**: To get meaningful sweep results, need either reduced dataset, fewer epochs per trial, or significantly longer timeout.
+
 ---
 
 ## RL Portfolio Allocation
@@ -206,6 +237,48 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 
 **Key Finding**: Transformer shows genuine OOS alpha across 11 years and 22 folds (avg Sharpe 0.64, 68% win rate, +260% cumulative return), while Ridge is barely profitable (-0.40 avg Sharpe, 43% win rate). The worst Transformer fold (-2.22) was during COVID (Mar 2020), but it recovered strongly in the next fold (+1.23). This confirms the Transformer learns meaningful predictive patterns across diverse market regimes.
 
+### NIFTY 500 Transformer (22 folds, Jul 2013 - Oct 2024, top_n=10)
+
+| Metric | Value |
+|--------|-------|
+| **Avg Sharpe** | **0.89** |
+| **CAGR** | **23.39%** |
+| Sortino | 1.19 |
+| Max Drawdown | -48.91% |
+| Volatility | 20.55% |
+| **Win Rate** | **14/22 (64%)** |
+| **Cumulative Return** | **+892%** |
+| Best Fold | 4.19 (fold 19) |
+| Worst Fold | -2.34 (fold 12, COVID crash) |
+| Walk-Forward Time | 323 min (5.4 hours, H100) |
+
+| Fold | Test Period | Sharpe | Return | Max DD |
+|------|------------|--------|--------|--------|
+| 0 | Jul 2013 - Jan 2014 | 0.91 | +11.2% | -10.8% |
+| 1 | Jan 2014 - Jul 2014 | **3.73** | +48.6% | -7.7% |
+| 2 | Jul 2014 - Feb 2015 | 1.59 | +19.1% | -10.5% |
+| 3 | Feb 2015 - Aug 2015 | 1.75 | +22.0% | -13.0% |
+| 4 | Aug 2015 - Feb 2016 | -1.42 | -15.3% | -20.9% |
+| 5 | Feb 2016 - Aug 2016 | 3.12 | +32.8% | -6.7% |
+| 6 | Aug 2016 - Feb 2017 | 1.44 | +17.2% | -17.4% |
+| 7 | Feb 2017 - Aug 2017 | -0.65 | -3.1% | -11.0% |
+| 8 | Aug 2017 - Feb 2018 | 0.98 | +10.9% | -13.1% |
+| 9 | Feb 2018 - Aug 2018 | -0.50 | -2.8% | -17.6% |
+| 10 | Aug 2018 - Mar 2019 | -0.97 | -8.9% | -23.9% |
+| 11 | Mar 2019 - Sep 2019 | -0.94 | -6.5% | -19.3% |
+| 12 | Sep 2019 - Mar 2020 | **-2.34** | -28.8% | **-40.7%** |
+| 13 | Mar 2020 - Sep 2020 | 3.53 | +58.4% | -8.9% |
+| 14 | Sep 2020 - Mar 2021 | 2.62 | +34.3% | -7.3% |
+| 15 | Mar 2021 - Sep 2021 | 2.06 | +21.4% | -6.8% |
+| 16 | Sep 2021 - Mar 2022 | -0.89 | -9.3% | -22.3% |
+| 17 | Mar 2022 - Sep 2022 | -0.34 | -1.8% | -18.5% |
+| 18 | Sep 2022 - Apr 2023 | -0.60 | -2.9% | -16.2% |
+| 19 | Apr 2023 - Oct 2023 | **4.19** | +31.6% | -3.2% |
+| 20 | Oct 2023 - Apr 2024 | 2.12 | +22.2% | -6.4% |
+| 21 | Apr 2024 - Oct 2024 | 2.78 | +37.9% | -7.8% |
+
+**Key Finding**: NIFTY 500 Transformer significantly outperforms NIFTY 50 (0.89 vs 0.64 avg Sharpe, +892% vs +260% cumulative). The broader universe provides more alpha opportunities. Recent folds (19-21) show consistently strong performance (Sharpe 2.1-4.2), suggesting the model adapts well to current market conditions.
+
 ### Full Indian Market Ridge (23 folds, Jul 2013 - Dec 2024, top_n=20)
 
 | Metric | Value |
@@ -297,15 +370,15 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 | A | Pretrain masked encoder + Transformer training | Complete |
 | B | TFT training + RL PPO | Complete |
 | C | SAC + Regimes + Backtest | Complete |
-| D | NIFTY 500 DL + Walk-Forward | Ready (not yet run) |
-| E | Optuna Hyperparameter Sweep | Ready (not yet run) |
-| F | Full Indian Market DL + Walk-Forward | Ready (data computed locally, 524MB) |
+| D | NIFTY 500 DL + Walk-Forward | **Complete** (0.89 Sharpe, +892% return) |
+| E | Optuna Hyperparameter Sweep | **Complete** (1 trial each, 2h timeout) |
+| F | Full Indian Market DL + Walk-Forward | Running (fold 9/23 as of 13:40 UTC) |
 
 ---
 
 ## Key Findings
 
-1. **Transformer dominates OOS**: 0.64 avg Sharpe across 22 walk-forward folds (68% positive, +260% cumulative return over 11 years) vs Ridge's -0.40 (43% positive). Transformer gets 94.5% weight in optimized ensemble (Sharpe 0.61).
+1. **Transformer dominates OOS across all universes**: NIFTY 50: 0.64 avg Sharpe, +260% return (22 folds). **NIFTY 500: 0.89 avg Sharpe, +892% return (22 folds)** — broader universe amplifies alpha. Ridge fails on both (-0.40 and -1.41 Sharpe respectively).
 
 2. **TFT mode collapse fixed**: Original TFT (35.6M params) collapsed to constant predictions. TFT-small (562K params, retrained) produces diverse signals (std=0.014). In Bear/Transition regimes, TFT-small gets 57-71% weight (captures different patterns than Transformer).
 

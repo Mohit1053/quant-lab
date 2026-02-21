@@ -42,3 +42,9 @@ multirun/
 
 # Claude
 .claude/
+
+# Large local artifacts
+*.zip
+.coverage
+notebooks/F_logs
+/quant_lab/
