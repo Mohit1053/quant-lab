@@ -206,6 +206,46 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 
 **Key Finding**: Transformer shows genuine OOS alpha across 11 years and 22 folds (avg Sharpe 0.64, 68% win rate, +260% cumulative return), while Ridge is barely profitable (-0.40 avg Sharpe, 43% win rate). The worst Transformer fold (-2.22) was during COVID (Mar 2020), but it recovered strongly in the next fold (+1.23). This confirms the Transformer learns meaningful predictive patterns across diverse market regimes.
 
+### Full Indian Market Ridge (23 folds, Jul 2013 - Dec 2024, top_n=20)
+
+| Metric | Value |
+|--------|-------|
+| **Avg Sharpe** | **-1.41** |
+| Std Sharpe | 1.96 |
+| Median Sharpe | -1.16 |
+| Win Rate | 7/23 (30%) |
+| Total Return | -98.1% |
+| Best Fold | 1.88 (fold 1) |
+| Worst Fold | -5.42 (fold 12, COVID crash) |
+
+| Fold | Test Period | Sharpe | Return |
+|------|------------|--------|--------|
+| 0 | Jul 2013 - Jan 2014 | -1.87 | -18.9% |
+| 1 | Jan 2014 - Jul 2014 | **1.88** | +32.0% |
+| 2 | Jul 2014 - Feb 2015 | 1.06 | +16.1% |
+| 3 | Feb 2015 - Aug 2015 | 0.58 | +8.3% |
+| 4 | Aug 2015 - Feb 2016 | -2.18 | -31.6% |
+| 5 | Feb 2016 - Aug 2016 | 0.02 | +1.5% |
+| 6 | Aug 2016 - Feb 2017 | -1.12 | -13.3% |
+| 7 | Feb 2017 - Aug 2017 | -2.76 | -20.9% |
+| 8 | Aug 2017 - Feb 2018 | -0.61 | -7.9% |
+| 9 | Feb 2018 - Aug 2018 | -3.66 | -31.6% |
+| 10 | Aug 2018 - Mar 2019 | -5.02 | -49.3% |
+| 11 | Mar 2019 - Sep 2019 | -4.10 | -37.8% |
+| 12 | Sep 2019 - Mar 2020 | **-5.42** | -51.9% |
+| 13 | Mar 2020 - Sep 2020 | -3.20 | -33.5% |
+| 14 | Sep 2020 - Mar 2021 | 0.85 | +13.0% |
+| 15 | Mar 2021 - Sep 2021 | 0.47 | +7.2% |
+| 16 | Sep 2021 - Mar 2022 | -0.40 | -6.7% |
+| 17 | Mar 2022 - Sep 2022 | -2.63 | -28.0% |
+| 18 | Sep 2022 - Apr 2023 | -2.90 | -30.7% |
+| 19 | Apr 2023 - Oct 2023 | 0.41 | +5.8% |
+| 20 | Oct 2023 - Apr 2024 | -1.16 | -15.0% |
+| 21 | Apr 2024 - Oct 2024 | -1.23 | -12.5% |
+| 22 | Oct 2024 - Dec 2024 | 0.69 | +3.4% |
+
+**Key Finding**: Ridge completely fails on the full Indian market (-1.41 avg Sharpe, 30% win rate, -98% total return). Selecting top-20 from 1,093 stocks using linear features generates far more noise than signal. This strongly validates the need for deep learning models (Transformer/TFT) on the broader universe — results from Colab notebook F will determine if non-linear models can capture alpha that Ridge cannot.
+
 ---
 
 ## Regime Detection
@@ -273,7 +313,7 @@ Expanding window, 126-day test periods (~6 months per fold), retrain each fold.
 
 4. **Regime conditioning nuanced**: TFT-small dominates in Bear/Transition; Transformer in Bull. Overall regime-conditional (Sharpe 0.32) underperforms optimized fixed weights (0.61), suggesting regime detection noise limits in-sample -> OOS transfer.
 
-5. **NIFTY 500 expansion**: Ridge strategy yields identical results to NIFTY 50 (top-N picks same large-cap stocks). DL models needed to exploit the broader universe (Colab D/E ready).
+5. **NIFTY 500 expansion**: Ridge strategy yields identical results to NIFTY 50 (top-N picks same large-cap stocks). On full Indian market (1,093 stocks), Ridge collapses to -1.41 Sharpe / -98% return — linear models cannot extract signal from a large, noisy universe. DL models are essential for broader universe alpha (Colab D/E/F running).
 
 6. **Full Indian market expansion**: All 2,105 NSE EQ-series equities downloaded via EQUITY_L.csv. After liquidity filters (10K avg vol, INR 5 min price, 50% trading days, 504-day min history), 1,093 stocks remain with 3.7M rows and 524MB of features. Colab notebook F ready for DL training.
 

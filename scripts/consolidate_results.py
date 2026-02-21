@@ -172,6 +172,7 @@ def main():
         ("NIFTY 50 Ridge", Path("outputs/walk_forward/ridge")),
         ("NIFTY 50 Transformer", Path("outputs/walk_forward/transformer")),
         ("NIFTY 500 Ridge", Path("outputs/walk_forward/ridge_nifty500")),
+        ("Full Market Ridge", Path("outputs/walk_forward/ridge_fullmkt")),
         ("Full Market Transformer", Path("outputs/walk_forward/transformer_fullmkt")),
     ]
 
